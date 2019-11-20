@@ -13,6 +13,11 @@ const (
 )
 
 func main() {
+    _, err := setUpDatabase()
+    if err != nil {
+        fmt.Println("Error setting up mongoDB: ", err)
+    }   
+
     // Listen for incoming connections.
     l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
     if err != nil {
