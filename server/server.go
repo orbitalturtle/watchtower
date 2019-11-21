@@ -42,7 +42,25 @@ func main() {
 }
 
 func handleRequest(conn *net.Conn) {
+    // Make a buffer to hold incoming data.
+    buf := make([]byte, 1024)
+
+    // Read the incoming connection into the buffer.
+    reqLen, err := conn.Read(buf)
+    if err != nil {
+      fmt.Println("Error reading:", err.Error())
+    }
+
+    // Convert initial bytes to string to determine which endpoint to use 
+    json
+
+    switch
+
+    // Send a response back to person contacting us.
+    conn.Write([]byte("Message received."))
+
+    // Close the connection when done with it.
+    conn.Close()
 
     fmt.Println("Server has received a connection: ", conn)
-
 }
