@@ -5,7 +5,8 @@ import (
     "fmt"
     "net"
     "os"
-    "sync"
+
+    "go.mongodb.org/mongo-driver/mongo"
 ) 
 
 const (
@@ -14,11 +15,14 @@ const (
     CONN_TYPE = "tcp"
 )
 
+// TODO: Split off into a towerd file.
 func main() {
-    _, err := setUpDatabase()
+    db, err := setUpDatabase()
     if err != nil {
         fmt.Println("Error setting up mongoDB: ", err)
     }   
+
+    s := newServer(db)
 
     // Listen for incoming connections.
     l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
@@ -41,11 +45,23 @@ func main() {
         defer conn.Close()
 
         // Handle connections in a new goroutine.
-        go handleRequest(&conn)
+        go s.handleRequest(&conn)
     }
 }
 
-func handleRequest(conn *net.Conn) {
+type server struct {
+    db *mongo.Client
+    peers map[*net.Addr]bool
+}
+
+func newServer(db *mongo.Client) (*server) {
+    return &server{
+        db: db,
+        peers: make(map[*net.Addr]bool),
+    }
+}
+
+func (s *server) handleRequest(conn *net.Conn) {
     remoteAddr := (*conn).RemoteAddr().String()
     fmt.Println("Client connected from " + remoteAddr)
 
@@ -58,18 +74,18 @@ func handleRequest(conn *net.Conn) {
     		break
     	}
 
-    	handleMessage(scanner.Text(), conn)
+    	s.handleMessage(scanner.Text(), conn)
     }
 
     fmt.Println("Client at " + remoteAddr + " disconnected.")
 }
 
-func handleMessage(cmd string, conn *net.Conn) {
+func (s *server) handleMessage(cmd string, conn *net.Conn) {
     if len(cmd) > 0 {
         switch { 
         case cmd == "/init":
             fmt.Println("Initializing watchtower connection")
-            initWatch(conn)
+            s.initWatch(conn)
 
         default:
             (*conn).Write([]byte("Unrecognized command.\n"))

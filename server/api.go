@@ -8,10 +8,9 @@ import (
 )
 
 // Endpoint for init message, which kicks off communication with the watchtower. 
-func initWatch(conn *net.Conn) {
+func (s *server) initWatch(conn *net.Conn) {
     var init Wt_init 
 
-    // Not really sure why this part is necessary.
     rw := bufio.NewReadWriter(bufio.NewReader(*conn), bufio.NewWriter(*conn))
 
     dec := gob.NewDecoder(rw)
