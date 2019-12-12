@@ -12,6 +12,19 @@ type Wt_appointment struct {
 	QosData          string
 }
 
+type AppointmentAccepted struct {
+	Locator []byte
+	Qos     string
+	QosLen  uint16
+}
+
+type AppointmentRejected struct {
+	Locator   []byte
+	Rcode     uint16
+	Reason    string
+	ReasonLen uint16
+}
+
 type Mode int
 
 const (

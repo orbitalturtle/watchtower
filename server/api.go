@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/gob"
 	"log"
 	"net"
@@ -21,20 +20,47 @@ func (s *server) addAppointment(conn *net.Conn) {
 		return
 	}
 
-	// TODO: Make sure appointment message has every required property.
+	var cmd string
+	var response interface{}
 
-	// If init message is acceptable, add peer to watchtower's list
-	peerAddr := (*conn).RemoteAddr()
-	s.peers[&peerAddr] = true
+	// TODO: Check that authentication is valid.
+	// Make sure appointment message has every required property.
+	if appointment.Locator == nil {
+		// TODO: Check that locator is the correct length
+		cmd = "AppointmentRejected \n"
+		reason := "Locator is required. Must be the correct size to match a real transaction."
+		response = AppointmentRejected{
+			Locator:   appointment.Locator,
+			Rcode:     400,
+			Reason:    reason,
+			ReasonLen: uint16(len(reason)),
+		}
+	} else {
+		// If we hit none of the above errors, appointment message is acceptable.
+		// Add peer to watchtower's list
+		peerAddr := (*conn).RemoteAddr()
+		s.peers[&peerAddr] = true
 
-	var response bytes.Buffer
+		cmd = "AppointmentAccepted \n"
+		// Then send back an "AppointmentAccepted" response.
+		response = AppointmentAccepted{
+			Locator: appointment.Locator,
+			Qos:     appointment.QosData,
+			QosLen:  appointment.QosLen,
+		}
+	}
+
+	rw.Writer.WriteString(cmd)
+	rw.Flush()
+
 	// Send an encoded response to the client.
 	enc := gob.NewEncoder(rw)
-	err = enc.Encode(&response)
+	err = enc.Encode(response)
 	if err != nil {
 		log.Println("Error encoding GOB data:", err)
 		return
 	}
+	rw.Flush()
 }
 
 // Endpoint for init message, which kicks off communication with the watchtower.
