@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -15,8 +16,19 @@ const (
 	CONN_TYPE = "tcp"
 )
 
-// TODO: Split off into a towerd file.
-func main() {
+type server struct {
+	db    *mongo.Client
+	peers map[*net.Addr]bool
+}
+
+func newServer(db *mongo.Client) *server {
+	return &server{
+		db:    db,
+		peers: make(map[*net.Addr]bool),
+	}
+}
+
+func startServer() {
 	db, err := setUpDatabase()
 	if err != nil {
 		fmt.Println("Error setting up mongoDB: ", err)
@@ -49,18 +61,6 @@ func main() {
 	}
 }
 
-type server struct {
-	db    *mongo.Client
-	peers map[*net.Addr]bool
-}
-
-func newServer(db *mongo.Client) *server {
-	return &server{
-		db:    db,
-		peers: make(map[*net.Addr]bool),
-	}
-}
-
 func (s *server) handleRequest(conn *net.Conn) {
 	remoteAddr := (*conn).RemoteAddr().String()
 	fmt.Println("Client connected from " + remoteAddr)
@@ -81,8 +81,10 @@ func (s *server) handleRequest(conn *net.Conn) {
 }
 
 func (s *server) handleMessage(cmd string, conn *net.Conn) {
-	if len(cmd) > 0 {
-		switch cmd {
+	newCmd := strings.Trim(cmd, "\n ")
+
+	if len(newCmd) > 0 {
+		switch newCmd {
 		case "/appointment":
 			fmt.Println("Trying to add appointment to watchtower")
 			s.addAppointment(conn)
@@ -93,4 +95,9 @@ func (s *server) handleMessage(cmd string, conn *net.Conn) {
 			(*conn).Write([]byte("Unrecognized command.\n"))
 		}
 	}
+}
+
+// TODO: Split off into a towerd file.
+func main() {
+	startServer()
 }
