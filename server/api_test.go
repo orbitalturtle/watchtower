@@ -3,23 +3,62 @@ package main
 import (
 	"bufio"
 	"encoding/gob"
+	"log"
 	"net"
+	"strings"
 	"testing"
-	"time"
 )
 
-func initServer() {
-	main()
-}
-
-// Test that the init endpoint responds if correct data is passed to it.
+// Test that the appointment endpoint responds correctly.
 func TestAppointmentEndpoint(t *testing.T) {
-	go initServer()
+	go startServer()
 
-	// Give server time to get set up
-	time.Sleep(time.Second)
+	cmd := "/appointment \n"
 
-	cmd := "/appointment"
+	conn, err := net.Dial("tcp", "127.0.0.1:3333")
+	if err != nil {
+		t.Fatalf("Some problem connecting to watchtower: %v", err)
+	}
+	defer conn.Close()
+
+	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+
+	appointmentErr := Wt_appointment{Locator: nil}
+
+	_, err = rw.Writer.WriteString(cmd)
+	if err != nil {
+		t.Fatalf("Writing cmd throws an error: %v", err)
+	}
+	rw.Flush()
+
+	enc := gob.NewEncoder(rw)
+	err = enc.Encode(appointmentErr)
+	if err != nil {
+		t.Fatalf("Encoding error when sending appointmentErr: %v", err)
+	}
+	rw.Flush()
+
+	cmd, err = rw.Reader.ReadString('\n')
+	if err != nil {
+		t.Fatalf("Reading error when retrieving appointment response: %v", err)
+	}
+
+	cmd = strings.TrimSpace(cmd)
+
+	if cmd != "AppointmentRejected" {
+		t.Fatalf("Watchtower should have returned an appointment error.")
+	}
+
+	var rejected AppointmentRejected
+
+	dec := gob.NewDecoder(rw)
+	err = dec.Decode(&rejected)
+	if err != nil {
+		log.Println("Error decoding response GOB data:", err)
+		return
+	}
+
+	rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 	encryptedBlob := []byte("BlobTest")
 	authToken := []byte("TokenTest")
@@ -38,53 +77,30 @@ func TestAppointmentEndpoint(t *testing.T) {
 		QosLen:           uint16(len(qos)),
 	}
 
-	conn, err := net.Dial("tcp", "127.0.0.1:3333")
+	cmd = "/appointment \n"
+
+	_, err = rw.Writer.WriteString(cmd)
 	if err != nil {
-		t.Fatalf("Some problem connecting to watchtower: %v", err)
+		t.Fatalf("Writing cmd throws an error: %v", err)
 	}
-	defer conn.Close()
+	rw.Flush()
 
-	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-
-	rw.Writer.Write([]byte(cmd))
-
-	// var initBytes bytes.Buffer
-	enc := gob.NewEncoder(rw)
+	enc = gob.NewEncoder(rw)
 	err = enc.Encode(appointment)
 	if err != nil {
-		t.Fatalf("Encoding error: %v", err)
+		t.Fatalf("Encoding error when sending appointment: %v", err)
+	}
+	rw.Flush()
+
+	// Check that the response comes back if we send correct data.
+	cmd, err = rw.Reader.ReadString('\n')
+	if err != nil {
+		t.Fatalf("Reading error when retrieving appointment response: %v", err)
+	}
+
+	cmd = strings.TrimSpace(cmd)
+
+	if cmd != "AppointmentAccepted" {
+		t.Fatalf("Appointment server shouldn't have returned an error.")
 	}
 }
-
-// Test that the init endpoint responds if correct data is passed to it.
-// func TestInitEndpoint(t *testing.T) {
-// 	go initServer()
-//
-// 	// Give server time to get set up
-// 	time.Sleep(time.Second)
-//
-// 	cmd := "/init"
-//
-// 	init := Wt_init{
-// 		AcceptedCiphers: []string{"chacha20"},
-// 		Modes:           []Mode{Altruistic},
-// 		Qos:             []string{"accountability"},
-// 	}
-//
-// 	conn, err := net.Dial("tcp", "127.0.0.1:3333")
-// 	if err != nil {
-// 		t.Fatalf("Some problem connecting to watchtower: %v", err)
-// 	}
-// 	defer conn.Close()
-//
-// 	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-//
-// 	rw.Writer.Write([]byte(cmd))
-//
-// 	// var initBytes bytes.Buffer
-// 	enc := gob.NewEncoder(rw)
-// 	err = enc.Encode(init)
-// 	if err != nil {
-// 		t.Fatalf("Encoding error: %v", err)
-// 	}
-// }
