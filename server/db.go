@@ -4,12 +4,13 @@ import (
     "context"
     "fmt"
 
+    "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/mongo"
     "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Data about the latest commitment transaction for a particular client, which 
-// the watchtower needs to send a justice transaction.
+// the watchtower needs to send a justice transaction, if needed.
 type appointment struct {
     locator []byte
     startBlock uint64
@@ -37,7 +38,28 @@ func setUpDatabase() (*mongo.Client, error) {
 
     fmt.Println("Connected to MongoDB!")
 
+    err = createApptCollection(client) 
+    if err != nil {
+        fmt.Println("Create appt collection err: ", err)
+    }
+
     return client, nil
 }
 
+// Create collection with an index so watchtower can query for transactions faster.
+func createApptCollection(client *mongo.Client) error {
+    apptsCollection := client.Database("test").Collection("appointments")
 
+    indexView := apptsCollection.Indexes()
+
+    model := mongo.IndexModel{Keys: bson.D{{"locator", 1}}}
+
+    names, err := indexView.CreateOne(context.TODO(), model)
+    if err != nil {
+        fmt.Println("Err with creating appointments index: ", err)
+        return err
+    }
+
+    fmt.Printf("Created appointment index %v\n", names)
+    return nil
+}
