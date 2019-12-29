@@ -6,13 +6,19 @@ import (
 	"log"
 	"net"
 	"strings"
+        "sync"
 	"testing"
 )
 
 // Test that the appointment endpoint responds correctly.
 func TestAppointmentEndpoint(t *testing.T) {
-	go startServer()
+        var wg sync.WaitGroup
+        wg.Add(1)
 
+	go startServer(&wg)
+
+        wg.Wait()
+ 
 	cmd := "/appointment \n"
 
 	conn, err := net.Dial("tcp", "127.0.0.1:3333")
