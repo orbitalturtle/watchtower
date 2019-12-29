@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
+        "sync"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -29,7 +30,7 @@ func newServer(db *mongo.Client) *server {
 	}
 }
 
-func startServer() {
+func startServer(wg *sync.WaitGroup) {
 	db, err := setUpDatabase()
 	if err != nil {
 		fmt.Println("Error setting up mongoDB: ", err)
@@ -48,6 +49,8 @@ func startServer() {
 	defer l.Close()
 
 	fmt.Println("Listening on " + CONN_HOST + ":" + CONN_PORT)
+
+        wg.Done()
 
 	for {
 		// Listen for an incoming connection.
@@ -101,5 +104,5 @@ func (s *server) handleMessage(cmd string, conn *net.Conn) {
 
 // TODO: Split off into a towerd file.
 func main() {
-	startServer()
+	startServer(nil)
 }

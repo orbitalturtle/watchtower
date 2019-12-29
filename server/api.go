@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+        "context"
 	"encoding/gob"
 	"log"
 	"net"
@@ -37,9 +38,18 @@ func (s *server) addAppointment(conn *net.Conn) {
 		}
 	} else {
 		// If we hit none of the above errors, appointment message is acceptable.
-		// Add peer to watchtower's list
+		// Add peer to watchtower's list.
 		peerAddr := (*conn).RemoteAddr()
 		s.peers[&peerAddr] = true
+
+                // Add appointment to our database.
+                collection := s.db.Database("test").Collection("appointments")
+                insertResult, err := collection.InsertOne(context.TODO(), appointment)
+                if err != nil {
+                    log.Fatal(err)
+                }
+                
+                log.Println("Inserted an appointment into db: ", insertResult.InsertedID)
 
 		cmd = "AppointmentAccepted \n"
 		// Then send back an "AppointmentAccepted" response.
