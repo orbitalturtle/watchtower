@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
         "sync"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -19,11 +17,13 @@ const (
 )
 
 type server struct {
-	db    *mongo.Client
+	db    *db
+        blockscanner *blockscanner
+
 	peers map[*net.Addr]bool
 }
 
-func newServer(db *mongo.Client) *server {
+func newServer(db *db) *server {
 	return &server{
 		db:    db,
 		peers: make(map[*net.Addr]bool),
@@ -35,7 +35,7 @@ func startServer(wg *sync.WaitGroup) {
 	if err != nil {
 		fmt.Println("Error setting up mongoDB: ", err)
 	}
-        defer db.Disconnect(context.TODO())
+        defer db.client.Disconnect(context.TODO())
 
 	s := newServer(db)
 

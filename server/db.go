@@ -25,7 +25,11 @@ type appointment struct {
     op_customer_public_key []byte
 }
 
-func setUpDatabase() (*mongo.Client, error) {
+type db struct {
+    client *mongo.Client
+}
+
+func setUpDatabase() (*db, error) {
     // Set client options
     clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 
@@ -36,19 +40,21 @@ func setUpDatabase() (*mongo.Client, error) {
         return nil, err
     }
 
+    db := db{client: client}
+
     fmt.Println("Connected to MongoDB!")
 
-    err = createApptCollection(client) 
+    err = db.createApptCollection() 
     if err != nil {
         fmt.Println("Create appt collection err: ", err)
     }
 
-    return client, nil
+    return &db, nil
 }
 
 // Create collection with an index so watchtower can query for transactions faster.
-func createApptCollection(client *mongo.Client) error {
-    apptsCollection := client.Database("test").Collection("appointments")
+func (d *db) createApptCollection() error {
+    apptsCollection := d.client.Database("test").Collection("appointments")
 
     indexView := apptsCollection.Indexes()
 
@@ -63,3 +69,4 @@ func createApptCollection(client *mongo.Client) error {
     fmt.Printf("Created appointment index %v\n", names)
     return nil
 }
+

@@ -43,7 +43,7 @@ func (s *server) addAppointment(conn *net.Conn) {
 		s.peers[&peerAddr] = true
 
                 // Add appointment to our database.
-                collection := s.db.Database("test").Collection("appointments")
+                collection := s.db.client.Database("test").Collection("appointments")
                 insertResult, err := collection.InsertOne(context.TODO(), appointment)
                 if err != nil {
                     log.Fatal(err)
