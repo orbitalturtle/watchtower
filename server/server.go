@@ -39,6 +39,14 @@ func startServer(wg *sync.WaitGroup) {
 
 	s := newServer(db)
 
+        // Spin up blockscanner, which will scan for fraudulent transactions
+        // that our watchtower will need to react to.
+        // TODO: If the blockscanner is being started because it was temporarily
+        // shut down, should we look through the most recent blocks?
+        s.blockscanner = &blockscanner{}
+        go (s.blockscanner).start(db)
+
+
 	// Listen for incoming connections.
 	l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
 	if err != nil {
@@ -50,7 +58,9 @@ func startServer(wg *sync.WaitGroup) {
 
 	fmt.Println("Listening on " + CONN_HOST + ":" + CONN_PORT)
 
-        wg.Done()
+        if wg != nil {
+            wg.Done()
+        }
 
 	for {
 		// Listen for an incoming connection.
