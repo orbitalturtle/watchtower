@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
         "sync"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -19,11 +17,13 @@ const (
 )
 
 type server struct {
-	db    *mongo.Client
+	db    *db
+        blockscanner *blockscanner
+
 	peers map[*net.Addr]bool
 }
 
-func newServer(db *mongo.Client) *server {
+func newServer(db *db) *server {
 	return &server{
 		db:    db,
 		peers: make(map[*net.Addr]bool),
@@ -35,9 +35,17 @@ func startServer(wg *sync.WaitGroup) {
 	if err != nil {
 		fmt.Println("Error setting up mongoDB: ", err)
 	}
-        defer db.Disconnect(context.TODO())
+        defer db.client.Disconnect(context.TODO())
 
 	s := newServer(db)
+
+        // Spin up blockscanner, which will scan for fraudulent transactions
+        // that our watchtower will need to react to.
+        // TODO: If the blockscanner is being started because it was temporarily
+        // shut down, should we look through the most recent blocks?
+        s.blockscanner = &blockscanner{}
+        go (s.blockscanner).start(db)
+
 
 	// Listen for incoming connections.
 	l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
@@ -50,7 +58,9 @@ func startServer(wg *sync.WaitGroup) {
 
 	fmt.Println("Listening on " + CONN_HOST + ":" + CONN_PORT)
 
-        wg.Done()
+        if wg != nil {
+            wg.Done()
+        }
 
 	for {
 		// Listen for an incoming connection.

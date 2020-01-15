@@ -109,4 +109,7 @@ func TestAppointmentEndpoint(t *testing.T) {
 	if cmd != "AppointmentAccepted" {
 		t.Fatalf("Appointment server shouldn't have returned an error.")
 	}
+
+       // wg.Add(1)
+        // wg.Wait()
 }
