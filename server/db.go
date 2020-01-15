@@ -70,3 +70,15 @@ func (d *db) createApptCollection() error {
     return nil
 }
 
+// Insert an appointment.
+func (d *db) insertAppt(appointment Wt_appointment) error {
+    collection := d.client.Database("test").Collection("appointments")
+    insertResult, err := collection.InsertOne(context.TODO(), appointment)
+    if err != nil {
+        fmt.Println(err)
+        return err
+    }
+
+    fmt.Println("Inserted an appointment into db: ", insertResult.InsertedID)
+    return nil
+}

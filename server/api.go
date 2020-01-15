@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-        "context"
 	"encoding/gob"
 	"log"
 	"net"
@@ -43,14 +42,11 @@ func (s *server) addAppointment(conn *net.Conn) {
 		s.peers[&peerAddr] = true
 
                 // Add appointment to our database.
-                collection := s.db.client.Database("test").Collection("appointments")
-                insertResult, err := collection.InsertOne(context.TODO(), appointment)
+                err := s.db.insertAppt(appointment)
                 if err != nil {
-                    log.Fatal(err)
+                    log.Fatal("Failed to insert appointment to db: ", err)
                 }
                 
-                log.Println("Inserted an appointment into db: ", insertResult.InsertedID)
-
 		cmd = "AppointmentAccepted \n"
 		// Then send back an "AppointmentAccepted" response.
 		response = AppointmentAccepted{
