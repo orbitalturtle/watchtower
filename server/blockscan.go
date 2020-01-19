@@ -14,7 +14,6 @@ import (
 
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/mongo"
-        "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type blockscanner struct {
@@ -141,23 +140,25 @@ func (b *blockscanner) lookForMatches(txs []*wire.MsgTx) ([]string, error) {
 
             // Grab the txid and turn it into a locator. 
             locator := getLocatorFromTxid(txid.String())
-
+ 
             // Then query locator index in database to see if it turns up a match.
             apptsCollection := b.db.client.Database("test").Collection("appointments")
-            opts := options.FindOne().SetSort(bson.D{{"age", 1}})
-            err := apptsCollection.FindOne(context.TODO(), bson.D{{"locator", locator}}, opts)
+
+            var appointment Wt_appointment
+
+            err := apptsCollection.FindOne(context.TODO(), bson.D{{"locator", locator}}).Decode(&appointment)
             if err == nil {
                 // Found a match
                 log.Println("Found a match: ", err)
                 matches = append(matches, locator)
             } else {
                 // ErrNoDocuments means that the filter did not match any documents in the collection
-                if err.Err() == mongo.ErrNoDocuments {
-                    log.Println("Error searching appointments collection via locator index: ", err)
+                if err == mongo.ErrNoDocuments {
+                    log.Println("No documents found wih this locator index: ", err)
                     continue 
                 }
                 log.Println("Error searching appointments collection via locator index: ", err)
-                return nil, err.Err()
+                return nil, err
             }
         }
 
