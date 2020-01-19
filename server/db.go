@@ -58,7 +58,7 @@ func (d *db) createApptCollection() error {
 
     indexView := apptsCollection.Indexes()
 
-    model := mongo.IndexModel{Keys: bson.D{{"locator", 1}}}
+    model := mongo.IndexModel{Keys: bson.D{{"Locator", 1}}}
 
     names, err := indexView.CreateOne(context.TODO(), model)
     if err != nil {
@@ -75,10 +75,22 @@ func (d *db) insertAppt(appointment Wt_appointment) error {
     collection := d.client.Database("test").Collection("appointments")
     insertResult, err := collection.InsertOne(context.TODO(), appointment)
     if err != nil {
-        fmt.Println(err)
+        fmt.Println("Error inserting appointment into db: ", err)
         return err
     }
 
     fmt.Println("Inserted an appointment into db: ", insertResult.InsertedID)
+    return nil
+}
+
+func (d *db) deleteAppt(locator string) error {
+    collection := d.client.Database("test").Collection("appointments")
+    _, err := collection.DeleteOne(context.TODO(), bson.D{{"locator", locator}})
+    if err != nil {
+        fmt.Println("Error deleting appointment from db: ", err)
+        return err
+    }
+
+    fmt.Println("Deleted an appointment from db: ", locator)
     return nil
 }
