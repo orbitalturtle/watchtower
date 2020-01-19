@@ -1,7 +1,7 @@
 package main
 
 type Wt_appointment struct {
-	Locator          []byte
+	Locator          string 
 	StartBlock       uint64
 	EndBlock         uint64
 	EncryptedBlobLen uint16
@@ -13,13 +13,13 @@ type Wt_appointment struct {
 }
 
 type AppointmentAccepted struct {
-	Locator []byte
+	Locator string 
 	Qos     string
 	QosLen  uint16
 }
 
 type AppointmentRejected struct {
-	Locator   []byte
+	Locator   string 
 	Rcode     uint16
 	Reason    string
 	ReasonLen uint16

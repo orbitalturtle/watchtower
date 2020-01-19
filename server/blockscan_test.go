@@ -29,7 +29,7 @@ var testTxs = []*wire.MsgTx{&testTx}
 
 var testTxHash = "78d1fb1d07e48c8296c93995d8262bea1e5eb8d8bc1568df9fc5db82e676254d"
 
-func startBlockscanner() (*blockscanner) {
+func startBlockscanner(t *testing.T) (*blockscanner) {
 	db, err := setUpDatabase()
         if err != nil {
                 fmt.Println("Error setting up mongoDB: ", err)
@@ -45,14 +45,14 @@ func startBlockscanner() (*blockscanner) {
 }
 
 func TestLookForMatches(t *testing.T) {
-        b := startBlockscanner() 
+        b := startBlockscanner(t) 
 
         time.Sleep(1 * time.Second)
 
         defer b.db.client.Disconnect(context.TODO())
 
         appointment := Wt_appointment{
-            Locator: []byte(getLocatorFromTxid(testTxHash)),
+            Locator: getLocatorFromTxid(testTxHash),
         } 
 
         err := b.db.insertAppt(appointment)
@@ -66,6 +66,11 @@ func TestLookForMatches(t *testing.T) {
         }
 
         // TODO: Create test for a failed match.
+        
+        err = b.db.deleteAppt(appointment.Locator)
+        if err != nil {
+            t.Fatal(err)
+        }
 }
 
 func TestReverseByteSlice(t *testing.T) {

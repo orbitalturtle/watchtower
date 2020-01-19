@@ -29,7 +29,7 @@ func TestAppointmentEndpoint(t *testing.T) {
 
 	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
-	appointmentErr := Wt_appointment{Locator: nil}
+	appointmentErr := Wt_appointment{Locator: ""}
 
 	_, err = rw.Writer.WriteString(cmd)
 	if err != nil {
@@ -72,7 +72,7 @@ func TestAppointmentEndpoint(t *testing.T) {
 
 	appointment := Wt_appointment{
 		// TODO: Replace this with actual locator information
-		Locator:          []byte("LocatorTest"),
+		Locator:          "LocatorTest",
 		StartBlock:       606680,
 		EndBlock:         606690,
 		EncryptedBlob:    encryptedBlob,

@@ -25,7 +25,7 @@ func (s *server) addAppointment(conn *net.Conn) {
 
 	// TODO: Check that authentication is valid.
 	// Make sure appointment message has every required property.
-	if appointment.Locator == nil {
+	if appointment.Locator == "" {
 		// TODO: Check that locator is the correct length
 		cmd = "AppointmentRejected \n"
 		reason := "Locator is required. Must be the correct size to match a real transaction."
