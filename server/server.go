@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-        "context"
 	"fmt"
 	"net"
 	"os"
@@ -31,11 +30,11 @@ func newServer(db *db) *server {
 }
 
 func startServer(wg *sync.WaitGroup) {
-	db, err := setUpDatabase()
+	db, closeDb, err := setUpDatabase()
 	if err != nil {
 		fmt.Println("Error setting up mongoDB: ", err)
 	}
-        defer db.client.Disconnect(context.TODO())
+        defer closeDb()
 
 	s := newServer(db)
 
