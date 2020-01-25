@@ -2,7 +2,6 @@ package main
 
 import (
     "bytes"
-    "context"
     "fmt"
     "testing"
     "time"
@@ -29,8 +28,8 @@ var testTxs = []*wire.MsgTx{&testTx}
 
 var testTxHash = "78d1fb1d07e48c8296c93995d8262bea1e5eb8d8bc1568df9fc5db82e676254d"
 
-func startBlockscanner(t *testing.T) (*blockscanner) {
-	db, err := setUpDatabase()
+func startBlockscanner(t *testing.T) (*blockscanner, func()) {
+	db, deleteDb, err := setUpTestDatabase(t)
         if err != nil {
                 fmt.Println("Error setting up mongoDB: ", err)
         }
@@ -41,15 +40,14 @@ func startBlockscanner(t *testing.T) (*blockscanner) {
         s.blockscanner = blockscanner
         go (s.blockscanner).start(db)
 
-        return s.blockscanner
+        return s.blockscanner, deleteDb
 }
 
 func TestLookForMatches(t *testing.T) {
-        b := startBlockscanner(t) 
+        b, deleteDb := startBlockscanner(t) 
+        defer deleteDb()
 
         time.Sleep(1 * time.Second)
-
-        defer b.db.client.Disconnect(context.TODO())
 
         appointment := Wt_appointment{
             Locator: getLocatorFromTxid(testTxHash),
