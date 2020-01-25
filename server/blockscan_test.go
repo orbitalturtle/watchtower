@@ -65,11 +65,16 @@ func TestLookForMatches(t *testing.T) {
             t.Fatal("This test tx should return as a match")
         }
 
-        // TODO: Create test for a failed match.
-        
         err = b.db.deleteAppt(appointment.Locator)
         if err != nil {
             t.Fatal(err)
+        }
+
+        // If locator is not in database, watchtower should find it is not a
+        // match. 
+        matches, err = b.lookForMatches(testTxs)
+        if matches != nil {
+            t.Fatal("Watchtower shouldn't find this tx as a match")
         }
 }
 
